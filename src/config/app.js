@@ -16,6 +16,7 @@ export default {
   port: process.env.PORT,
   frontendHost: process.env.FRONTEND_HOST,
   mongoUri: process.env.MONGO_URI,
+  recaptchaSecretKey: process.env.GOOGLE_RECAPTCHA_SECRET_KEY,
   isDev,
   isProd
 };

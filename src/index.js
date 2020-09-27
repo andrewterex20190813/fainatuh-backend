@@ -17,7 +17,7 @@ mongoose
   .connect(config.mongoUri, { useNewUrlParser: true })
   .catch(err => console.log(err));
 
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded());
 app.use(bodyParser.json());
 app.use(cors());
 

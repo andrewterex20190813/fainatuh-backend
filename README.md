@@ -126,3 +126,15 @@ Example validation error (http code 422):
     }
 }
 ```
+
+## Extra configuration
+
+# Recaptcha
+adding a new configureation for google Recaptcha v3 
+GOOGLE_RECAPTCHA_SECRET_KEY
+
+# AWS
+Add a new configuration for AWS S3
+AWS_S3_BUCKET
+AWS_ACCESS_KEY
+AWS_SECRET_KEY

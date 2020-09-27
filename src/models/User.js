@@ -27,6 +27,11 @@ const UserSchema = new Schema(
       unique: true,
       trim: true
     },
+    type: {
+      type: String,
+      required: true,
+      default: "INDIVIDUAL"
+    },
     email_verified: {
       type: Boolean,
       required: true,

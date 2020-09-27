@@ -7,6 +7,8 @@ import AppError from "../exeptions/AppError";
 import MailService from "../services/MailService";
 import randomize from "../utils/randomize";
 import config from "../config/app";
+import fetch from 'node-fetch';
+import RecaptchaService from '../services/RecaptchaService';
 import crypto from 'crypto';
 
 class AuthController {
@@ -19,31 +21,36 @@ class AuthController {
       throw new ClientError("Email not verified", 401);
     }
 
-    const checkPassword = await PasswordService.checkPassword(
-      req.body.password,
-      user.password
-    );
+    if (RecaptchaService.checkRecaptcha(req.body.token)) {
+      const checkPassword = await PasswordService.checkPassword(
+        req.body.password,
+        user.password
+      );
 
-    if (!checkPassword) {
-      throw new ClientError("Incorrect email or password", 401);
-    }
-
-    const accessToken = await TokenService.createAccessToken(user);
-    const refreshTokenHash = await TokenService.createRefreshToken(user);
-    const refreshToken = await TokenService.addRefreshTokenUser(
-      user,
-      refreshTokenHash
-    );
-
-    res.json({
-      accessToken,
-      refreshToken,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email
+      if (!checkPassword) {
+        throw new ClientError("Incorrect email or password", 401);
       }
-    });
+
+      const accessToken = await TokenService.createAccessToken(user);
+      const refreshTokenHash = await TokenService.createRefreshToken(user);
+      const refreshToken = await TokenService.addRefreshTokenUser(
+        user,
+        refreshTokenHash
+      );
+
+      res.json({
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          type: user.type
+        }
+      });
+    } else {
+      throw new ClientError("Recaptcha checking error", 401);
+    }
   }
 
   @TryCatchErrorDecorator
@@ -52,34 +59,38 @@ class AuthController {
     if (isAlreadyUser) {
       throw new ClientError("This email is already registered", 409);
     }
+    if (RecaptchaService.checkRecaptcha(req.body.token)) {
+      const password = randomize.generateString(12);
 
-    const password = randomize.generateString(12);
+      const user = new UserModel({
+        name: req.body.name,
+        email: req.body.email,
+        type: req.body.type,
+        password: await PasswordService.hashPassword(password),
+        email_verified: false
+      });
 
-    const user = new UserModel({
-      name: req.body.name,
-      email: req.body.email,
-      password: await PasswordService.hashPassword(password),
-      email_verified: false
-    });
+      await user.save();
 
-    await user.save();
+      const token = await TokenService.createSetPasswordToken(user);
 
-    const token = await TokenService.createSetPasswordToken(user);
-
-    MailService.sendWithTemplate(
-      {
-        to: req.body.email,
-        subject: "Thanks for registering"
-      },
-      {
-        template: "singup",
-        data: {
-          link: `${config.frontendHost}/setpassword/${user._id.toString()}/${token}`
+      MailService.sendWithTemplate(
+        {
+          to: req.body.email,
+          subject: "Thanks for registering"
+        },
+        {
+          template: "singup",
+          data: {
+            link: `${config.frontendHost}/setpassword/${user._id.toString()}/${token}`
+          }
         }
-      }
-    );
+      );
 
-    res.json({ status: "success" });
+      res.json({ status: "success" });
+    } else {
+      throw new ClientError("Recaptcha checking error", 401);
+    }
   }
 
   @TryCatchErrorDecorator
