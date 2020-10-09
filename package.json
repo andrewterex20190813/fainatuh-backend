@@ -47,6 +47,7 @@
     "nodemailer": "^6.4.11",
     "randomatic": "^3.1.1",
     "uuid": "^8.3.0",
+    "web-push": "^3.4.4",
     "winston": "^3.2.1"
   }
 }
